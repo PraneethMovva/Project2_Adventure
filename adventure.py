@@ -2,12 +2,15 @@ import json
 import sys
 import re
 
+# Check if the command line argument is provided
 if len(sys.argv) != 2:
     print("Usage: python3 game_script.py [map_file]")
     sys.exit()
 
+# Get the file name from the command line argument
 filename = sys.argv[1]
 
+# Read the JSON data from the file
 adventure_map = json.load(open(filename, "r"))
 
 start_map = adventure_map
@@ -15,6 +18,7 @@ inventory = []
 
 initial_location = adventure_map[0]
 current_place = adventure_map[0]
+
 
 def show_current_place():
     print(f"> {current_place['name']}")
@@ -24,6 +28,7 @@ def show_current_place():
         items = ", ".join(items_in_area)
         print(f"\nItems: {items}")
     print(f"\nExits: {' '.join(current_place['exits'].keys())}\n")
+
 
 def process_input(input_str):
     input_str = input_str.lower().strip()
@@ -136,4 +141,3 @@ while game_active:
         pass
 
 print("Goodbye!")
-
