@@ -1,192 +1,283 @@
-import sys
 import json
+import sys
+import re
 
-class Room:
-    def __init__(self, name, desc, exits, items):
-        self.name = name
-        self.desc = desc
-        self.exits = exits
-        self.items = items
-    
-    def __str__(self) -> str:
-        return f"{self.name}\n{self.desc}\n{self.exits}\n"
-    
-    def __repr__(self) -> str:
-        return f"{self.name}\n{self.desc}\n{self.exits}\n"
+# check if the command line argument is provided
+if len(sys.argv) != 2:
+    print("Usage: python3 program_name.py [map_file]")
+    sys.exit()
 
-class Map:
-    def __init__(self, mapfile):
-        self.rooms = {}
-        self.count = 0
-        self.parse_map(mapfile)
-        
+# get the file name from the command line argument
+filename = sys.argv[1]
 
-    def parse_map(self, mapfile):
-        with open(mapfile) as f:
-            try:
-                data = json.load(f)
-                for room_data in data:
-                    name = room_data.get("name")
-                    desc = room_data.get("desc")
-                    exits = room_data.get("exits")
-                    if(room_data.get("items")):
-                        items = room_data.get("items")
-                    else:
-                        items = []
-                    if name is None or desc is None or exits is None:
-                        raise ValueError("Invalid room data")
-                    for direction, room_id in exits.items():
-                        if not isinstance(room_id, int):
-                            raise ValueError("Invalid exit data")
-                    self.rooms[self.count] = Room(name, desc, exits, items)
-                    self.count += 1
-                
-            except:
-                raise ValueError("Invalid map file")
-            Game(self.rooms)
-    
-    def __str__(self):
-        return f"Map: {self.rooms}"
-    
-    def __repr__(self):
-        return f"Map: {self.rooms}"
-    
-class Game:
-    def __init__(self, rooms):
-        self.rooms = rooms
-        self.player_location = 0
-        self.inventory = []
-        self.start()
+# read the JSON data from the file
+game_map = json.load(open(filename, "r"))
 
-    def start(self):
-        room = self.rooms[self.player_location]
-        print(f"> {room.name}\n\n{room.desc}\n")
-        if(len(room.items) != 0):
-            print(f"Items: {', '.join(room.items)}\n")
-        print(f"Exits: {' '.join(room.exits.keys())}")
-        print()
-        self.prompt()
-    
-    def prompt(self):
-        valid_commands = ["go", "look", "get", "inventory", "quit", "drop"]
-        valid_directions = ["north","northeast","east","southeast","south","southwest","west","northwest"]
-        game_play = True
-        while game_play:
-            try:
-                action = input("What would you like to do? ")
-                half_verb = action.lower().split(" ")
-                matches = [cmd for cmd in valid_commands if cmd.startswith(half_verb[0])]
-                if len(matches) == 1:
-                    verb = matches
-                elif len(matches) == 0:
-                    dir_match = [dir for dir in valid_directions if dir.startswith(half_verb[0])]
-                    if len(dir_match) >= 1:
-                        verb = ["go"]
-                        half_verb = ["go", half_verb[0]]
-                    else:
-                        print("Invalid verb")
-                        continue
-        
-                if verb[0] == "go":
-                    if len(half_verb) == 2 :
+restart_map = game_map
+player_inventory = []
 
-                        self.go(half_verb[1])
-                    else:
-                        print("Sorry, you need to 'go' somewhere.")
+# Set the starting location
+start_location = game_map[0]
+current_location = game_map[0]
 
-                elif verb[0] == "look":
-                    if len(half_verb) == 1 :
-                        self.look()
-                    else :
-                        print(f"Invalid Verb")
 
-                elif verb[0] == "get":
-                        if len(half_verb) == 2 :
-                            self.get(half_verb[1])
-                        else:
-                            print(f"Sorry, you need to 'get' something.")
+def print_location():
+    print(f"> {current_location['name']}")
+    print(f"\n{current_location['desc']}")
+    if "items" in current_location and len(current_location["items"]) > 0:
+        items_in_room = current_location["items"]
+        items = ", ".join(items_in_room)
+        print(f"\nItems: {items}")
+    print(f"\nExits: {' '.join(current_location['exits'].keys())}\n")
 
-                elif verb[0] == "drop":
-                        if len(half_verb) == 2 :
-                            self.drop(half_verb[1])
-                        else:
-                            print(f"Sorry, you need to drop something.")
-                    
-                elif verb[0] == "inventory":
-                    if len(half_verb) == 1 :
-                        if(len(self.inventory) == 0):
-                            print(f"You're not carrying anything.")
-                        else:
-                            print(f"Inventory:\n{', '.join(self.inventory)}")
-                    else:
-                        print("Invalid Verb")
 
-                elif verb[0] == "quit":
-                    game_play = False
-                    print(f"Goodbye!")
-                    break
+# Handling user input
 
+
+def handle_input(input_str):
+    input_str = input_str.lower().strip()
+
+    valid_verb_dict = {"go": "this verb is used to move in a direction listed in room exits \n(example: go east) \nPlayer can also directly enter the direction without using go i.e e for east to go east", "\nget": "used to pick up a item (example: get life orb)",
+                       "\nlook": "used to understand where the player is currently", '\ninventory': "used to check the items in inventory", '\nhelp': "provides the commands a player can use in the game", '\nquit': "used to exit/end the game"}
+
+    if input_str.startswith('go'):
+        direction = input_str[3:]
+        if len(direction) == 0:
+            print("Sorry, you need to 'go' somewhere.")
+        else:
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+    # implementing directions as verbs extension
+    elif len(input_str) == 1:
+        if input_str.startswith('e'):
+            direction = 'east'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+        elif input_str.startswith('w'):
+            direction = 'west'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+        elif input_str.startswith('n'):
+            direction = 'north'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+
+        elif input_str.startswith('s'):
+            direction = 'south'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+    elif len(input_str) == 2:  # ne nw se sw
+        if input_str.startswith('ne'):
+            direction = 'northeast'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+        elif input_str.startswith('nw'):
+            direction = 'northwest'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+        elif input_str.startswith('se'):
+            direction = 'southeast'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+
+        elif input_str.startswith('sw'):
+            direction = 'southwest'
+            if direction in current_location['exits']:
+                new_location_id = current_location['exits'][direction]
+                new_location = game_map[new_location_id]
+                print(f'You go {direction}.\n')
+                return new_location
+            else:
+                print(f"There's no way to go {direction}.")
+
+    elif input_str.startswith('get'):
+        item_name = input_str[4:]
+        if len(player_inventory) == 6:
+            print("You cannot carry more than 6 items in your inventory")
+            pass
+        elif len(item_name) == 0:
+            print("Sorry, you need to 'get' something.")
+        else:
+            if 'items' in current_location and item_name in current_location['items']:
+                current_location['items'].remove(item_name)
+                player_inventory.append(item_name)
+                print(f'You pick up the {item_name}.')
+            else:
+                print(f"There's no {item_name} anywhere.")
+    elif input_str == 'inventory' or input_str == 'inv' or input_str == 'i':
+        if len(player_inventory) == 0:
+            print("You're not carrying anything.")
+        else:
+            inv_str = ", ".join(player_inventory)
+            # print(f"Inventory:\n  {inv_str}")
+            print("Inventory:")
+            for item in player_inventory:
+                print(f"  {item}")
+    elif input_str.startswith("drop"):
+        item_name = input_str[5:]
+        if len(item_name) == 0:
+            print("Sorry, you need to 'drop' something.")
+        else:
+            if item_name in player_inventory:
+                if "items" in current_location:
+                    current_location['items'].append(item_name)
+                    player_inventory.remove(item_name)
+                    print(f'You drop the {item_name}.')
                 else:
-                    print(f"Invalid verb")
-
-            except EOFError:
-                print(f"\nUse 'quit' to exit.")
-
-    
-    def go(self, direction1):
-        room = self.rooms[self.player_location]
-        direction = [cmd for cmd in room.exits.keys() if cmd.startswith(direction1)]
-
-        if len(direction) == 1:
-            print(f"You go {direction[0]}.\n")
-            self.player_location = room.exits[direction[0]]
-            self.look()
-        elif len(direction) > 1:
-            print(f"Did you want to go {' or '.join(direction)}?")
-        else:
-            print(f"There's no way to go {direction1}.")
-       
-
-    def look(self):
-        room = self.rooms[self.player_location]
-        print(f"> {room.name}\n\n{room.desc}\n")
-        if(len(room.items) != 0):
-            print(f"Items: {', '.join(room.items)}\n")
-        print(f"Exits: {' '.join(room.exits.keys())}")
-        print()
-    
-    def get(self, noun):
-        room = self.rooms[self.player_location]
-        items = [cmd for cmd in room.items if cmd.startswith(noun)]
-
-        if len(items) == 1:
-            self.inventory.append(items[0])
-            print(f"You pick up the {items[0]}.")
-            room.items.remove(items[0])
-        elif len(items) == 2:
-            print(f"Did you want to get the {' or '.join(items)}?")
-        elif len(items) > 2:
-            print(f"Did you want to get the {' , '.join(items[:(len(items)-1)])} or {items[len(items)-1]}?")
-        else:
-            print(f"There's no {noun} anywhere.")
-       
-    
-    def drop(self, noun):
-        room = self.rooms[self.player_location]
-        if noun not in self.inventory:
-            print(f"There is no {noun} in the inventory.") 
-        else:
-            self.inventory.remove(noun)
-            print(f"You drop the {noun}")
-            room.items.append(noun)
-
-if __name__ == "__main__":
-    if len(sys.argv) == 2:
-          map_file = sys.argv[1]
-          Map(map_file)
-       
+                    current_location['items'] = [item_name]
+            else:
+                print(f"There's no {item_name} in inventory.\n")
+    elif input_str.startswith("look"):
+        print_location()
+    elif input_str.startswith("help"):
+        print("You can run the following commands: \n")
+        for key, value in valid_verb_dict.items():
+            print(key, ":", value)
     else:
-         map_file = "loop.map"
-         Map(map_file)
-        
-        
+        print('I don\'t understand that enter a valid command.')
+
+
+# demon lord ascii art
+demon_alive = """
+    DEMON LORD LEVIATHAN
+           ,^^^^^,
+          #_   _#
+         |a ` ` a|
+         |  u    |         
+         \  =   /
+         |\___/|
+  ___ ___/:     :\___ ___
+/   '   \|` `'"`/|   `   \\
+|        |      |        |
+ \       \.  ,  /       /
+  `\     /`~( )~`\     /'
+    `\_/'   `"`   `\_/'  
+"""
+demon_ded = """
+    DEMON LORD LEVIATHAN
+           ,^^^^^,
+          #_   _#
+         |x ` ` x|
+         |  u    |         
+         \  ^   /
+         |\___/|
+  ___ ___/:     :\___ ___
+/   '   \|` `'"`/|   `   \\
+|        |      |        |
+ \       \.  ,  /       /
+  `\     /`~( )~`\     /'
+    `\_/'   `"`   `\_/'  
+"""
+if filename == "orb6.map":
+    print("""
+    Gametitle: Orb6
+
+    You are in the layer of the demon lord leviathan. His territory is big and unexplored. 
+    Your objective is to defeat the demon lord,
+    as his curse had been tormenting the land for a decade.
+    But as you are now your powers are useless against him!
+
+    You need to search his layers for the many orbs of power. You can only defeat the
+    demon lord if you have the powers of 6 orbs. You must blindly navigate through the different rooms as it is unmapped.
+    You must travel blindly on this lonely search for the orbs.
+    If you happen to enter the room which the demon lord resides without the 6 orbs it will lead to certain defeat.
+
+    You will start your journey at the entance of the layer.
+    Be careful warrior the future of this land depends on you!
+
+    (Use the help command warrior to see what you can do in this world.)
+    """)
+game_running = True
+location_count = 0
+# start the game loop
+while game_running:
+    if location_count == 0:
+        print_location()
+        location_count += 1
+    if 'boss' in current_location:
+        if len(player_inventory) == 6 and "clear orb" in player_inventory and "shadow orb" in player_inventory and "time orb" in player_inventory and "volcanic orb" in player_inventory and "life orb" in player_inventory and "earth orb" in player_inventory:
+            print(demon_ded)
+            print(
+                "The Demon Lord attacked you! but you used the power of the 6 orbs and defeated him!!!\n")
+            print("\nYou Win!")
+            play_again = input(
+                "\nDo you want to play again from the 1st room? \nPress Y to play again or any other key to quit ").lower().strip()
+            if play_again == "y":
+                game_map = restart_map
+                player_inventory = []
+                current_location = start_location
+                print_location()
+                pass
+            else:
+                break
+        else:
+            print(demon_alive)
+            print(
+                "The Demon Lord attacked you! since you didn't have the power of the 6 orbs he kills you :(")
+            print("\nYou Lose!")
+            play_again = input(
+                "\nDo you want to play again from the 1st room? \nPress Y to play again or any other key to quit ").lower().strip()
+            if play_again == "y":
+                game_map = restart_map
+                player_inventory = []
+                current_location = start_location
+                print_location()
+                pass
+            else:
+                break
+
+    try:
+        action = input('What would you like to do? ')
+        if re.match(re.compile(r'quit', re.IGNORECASE), action.lower().strip()):
+            break
+        new_location = handle_input(action)
+        if new_location:
+            current_location = new_location
+            print_location()
+
+    except (EOFError):
+        print("\nUse 'quit' to exit.")
+        pass
+
+
+print("Goodbye!")
