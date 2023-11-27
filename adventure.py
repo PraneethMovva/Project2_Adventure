@@ -31,14 +31,15 @@ def print_location():
     print(f"\nExits: {' '.join(current_location['exits'].keys())}\n")
 
 
-# Handling user input
-
-
 def handle_input(input_str):
     input_str = input_str.lower().strip()
 
-    valid_verb_dict = {"go": "this verb is used to move in a direction listed in room exits \n(example: go east) \nPlayer can also directly enter the direction without using go i.e e for east to go east", "\nget": "used to pick up a item (example: get life orb)",
-                       "\nlook": "used to understand where the player is currently", '\ninventory': "used to check the items in inventory", '\nhelp': "provides the commands a player can use in the game", '\nquit': "used to exit/end the game"}
+    valid_verb_dict = {"go": "this verb is used to move in a direction listed in room exits \n(example: go east) \nPlayer can also directly enter the direction without using go i.e e for east to go east", 
+                       "\nget": "used to pick up a item (example: get controller)",
+                       "\nlook": "used to understand where the player is currently", 
+                       '\ninventory': "used to check the items in inventory", 
+                       '\nhelp': "provides the commands a player can use in the game", 
+                       '\nquit': "used to exit/end the game"}
 
     if input_str.startswith('go'):
         direction = input_str[3:]
@@ -52,7 +53,6 @@ def handle_input(input_str):
                 return new_location
             else:
                 print(f"There's no way to go {direction}.")
-    # implementing directions as verbs extension
     elif len(input_str) == 1:
         if input_str.startswith('e'):
             direction = 'east'
@@ -91,45 +91,6 @@ def handle_input(input_str):
                 return new_location
             else:
                 print(f"There's no way to go {direction}.")
-    elif len(input_str) == 2:  # ne nw se sw
-        if input_str.startswith('ne'):
-            direction = 'northeast'
-            if direction in current_location['exits']:
-                new_location_id = current_location['exits'][direction]
-                new_location = game_map[new_location_id]
-                print(f'You go {direction}.\n')
-                return new_location
-            else:
-                print(f"There's no way to go {direction}.")
-        elif input_str.startswith('nw'):
-            direction = 'northwest'
-            if direction in current_location['exits']:
-                new_location_id = current_location['exits'][direction]
-                new_location = game_map[new_location_id]
-                print(f'You go {direction}.\n')
-                return new_location
-            else:
-                print(f"There's no way to go {direction}.")
-        elif input_str.startswith('se'):
-            direction = 'southeast'
-            if direction in current_location['exits']:
-                new_location_id = current_location['exits'][direction]
-                new_location = game_map[new_location_id]
-                print(f'You go {direction}.\n')
-                return new_location
-            else:
-                print(f"There's no way to go {direction}.")
-
-        elif input_str.startswith('sw'):
-            direction = 'southwest'
-            if direction in current_location['exits']:
-                new_location_id = current_location['exits'][direction]
-                new_location = game_map[new_location_id]
-                print(f'You go {direction}.\n')
-                return new_location
-            else:
-                print(f"There's no way to go {direction}.")
-
     elif input_str.startswith('get'):
         item_name = input_str[4:]
         if len(player_inventory) == 6:
@@ -176,96 +137,13 @@ def handle_input(input_str):
     else:
         print('I don\'t understand that enter a valid command.')
 
-
-# demon lord ascii art
-demon_alive = """
-    DEMON LORD LEVIATHAN
-           ,^^^^^,
-          #_   _#
-         |a ` ` a|
-         |  u    |         
-         \  =   /
-         |\___/|
-  ___ ___/:     :\___ ___
-/   '   \|` `'"`/|   `   \\
-|        |      |        |
- \       \.  ,  /       /
-  `\     /`~( )~`\     /'
-    `\_/'   `"`   `\_/'  
-"""
-demon_ded = """
-    DEMON LORD LEVIATHAN
-           ,^^^^^,
-          #_   _#
-         |x ` ` x|
-         |  u    |         
-         \  ^   /
-         |\___/|
-  ___ ___/:     :\___ ___
-/   '   \|` `'"`/|   `   \\
-|        |      |        |
- \       \.  ,  /       /
-  `\     /`~( )~`\     /'
-    `\_/'   `"`   `\_/'  
-"""
-if filename == "orb6.map":
-    print("""
-    Gametitle: Orb6
-
-    You are in the layer of the demon lord leviathan. His territory is big and unexplored. 
-    Your objective is to defeat the demon lord,
-    as his curse had been tormenting the land for a decade.
-    But as you are now your powers are useless against him!
-
-    You need to search his layers for the many orbs of power. You can only defeat the
-    demon lord if you have the powers of 6 orbs. You must blindly navigate through the different rooms as it is unmapped.
-    You must travel blindly on this lonely search for the orbs.
-    If you happen to enter the room which the demon lord resides without the 6 orbs it will lead to certain defeat.
-
-    You will start your journey at the entance of the layer.
-    Be careful warrior the future of this land depends on you!
-
-    (Use the help command warrior to see what you can do in this world.)
-    """)
 game_running = True
 location_count = 0
-# start the game loop
+
 while game_running:
     if location_count == 0:
         print_location()
         location_count += 1
-    if 'boss' in current_location:
-        if len(player_inventory) == 6 and "clear orb" in player_inventory and "shadow orb" in player_inventory and "time orb" in player_inventory and "volcanic orb" in player_inventory and "life orb" in player_inventory and "earth orb" in player_inventory:
-            print(demon_ded)
-            print(
-                "The Demon Lord attacked you! but you used the power of the 6 orbs and defeated him!!!\n")
-            print("\nYou Win!")
-            play_again = input(
-                "\nDo you want to play again from the 1st room? \nPress Y to play again or any other key to quit ").lower().strip()
-            if play_again == "y":
-                game_map = restart_map
-                player_inventory = []
-                current_location = start_location
-                print_location()
-                pass
-            else:
-                break
-        else:
-            print(demon_alive)
-            print(
-                "The Demon Lord attacked you! since you didn't have the power of the 6 orbs he kills you :(")
-            print("\nYou Lose!")
-            play_again = input(
-                "\nDo you want to play again from the 1st room? \nPress Y to play again or any other key to quit ").lower().strip()
-            if play_again == "y":
-                game_map = restart_map
-                player_inventory = []
-                current_location = start_location
-                print_location()
-                pass
-            else:
-                break
-
     try:
         action = input('What would you like to do? ')
         if re.match(re.compile(r'quit', re.IGNORECASE), action.lower().strip()):
