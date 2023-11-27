@@ -2,15 +2,12 @@ import json
 import sys
 import re
 
-# Check if the command line argument is provided
 if len(sys.argv) != 2:
     print("Usage: python3 game_script.py [map_file]")
     sys.exit()
 
-# Get the file name from the command line argument
 filename = sys.argv[1]
 
-# Read the JSON data from the file
 adventure_map = json.load(open(filename, "r"))
 
 start_map = adventure_map
@@ -46,15 +43,11 @@ def process_input(input_str):
         if len(direction) == 0:
             print("Please specify a direction to 'go'.")
         else:
-            matching_directions = [d for d in current_place['exits'].keys() if d.startswith(direction)]
-            if len(matching_directions) == 1:
-                direction = matching_directions[0]
+            if direction in current_place['exits']:
                 new_place_id = current_place['exits'][direction]
                 new_place = adventure_map[new_place_id]
                 print(f'You move {direction}.\n')
                 return new_place
-            elif len(matching_directions) > 1:
-                print(f"Did you want to go {', '.join(matching_directions)}?")
             else:
                 print(f"There's no way to go {direction}.")
     elif len(input_str) == 1 and input_str in {'e', 'w', 'n', 's'}:
@@ -75,14 +68,10 @@ def process_input(input_str):
         elif len(item_name) == 0:
             print("Please specify an item to 'get'.")
         else:
-            matching_items = [item for item in current_place.get('items', []) if item.startswith(item_name)]
-            if len(matching_items) == 1:
-                item_name = matching_items[0]
+            if 'items' in current_place and item_name in current_place['items']:
                 current_place['items'].remove(item_name)
                 inventory.append(item_name)
                 print(f'You pick up the {item_name}.')
-            elif len(matching_items) > 1:
-                print(f"Did you want to get {', '.join(matching_items)}?")
             else:
                 print(f"There's no {item_name} here.")
     elif input_str in {'inventory', 'inv', 'i'}:
@@ -98,17 +87,13 @@ def process_input(input_str):
         if len(item_name) == 0:
             print("Please specify an item to 'drop'.")
         else:
-            matching_inventory_items = [item for item in inventory if item.startswith(item_name)]
-            if len(matching_inventory_items) == 1:
-                item_name = matching_inventory_items[0]
+            if item_name in inventory:
                 if "items" in current_place:
                     current_place['items'].append(item_name)
                     inventory.remove(item_name)
                     print(f'You drop the {item_name}.')
                 else:
                     current_place['items'] = [item_name]
-            elif len(matching_inventory_items) > 1:
-                print(f"Did you want to drop {', '.join(matching_inventory_items)}?")
             else:
                 print(f"There's no {item_name} in your inventory.\n")
     elif input_str.startswith("look"):
