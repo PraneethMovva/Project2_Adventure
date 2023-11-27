@@ -1,0 +1,24 @@
+[
+ {"name": "Gaming Room",
+  "desc": "You are in a Gaming Room.",
+  "exits": { "north": 1, "east": 3},
+  "items": ["controller", "console"]
+ }
+,
+ {"name": "Restroom",
+  "desc": "You are in a Restroom.",
+  "exits": { "east": 2, "south": 0 }
+ }
+,
+ {"name": "Cafeteria/Lounge",
+  "desc": "You are in a Cafeteria and Lounge area where you can get food or relax.",
+  "exits": { "west": 1, "south": 3 },
+  "items": ["coffee", "popcorn", "ice-cream"]
+ }
+,
+ {"name": "Common Area",
+  "desc": "A Common area nothing fancy here!",
+  "exits": { "north": 2, "west": 0 },
+    "items": []
+ }
+]
