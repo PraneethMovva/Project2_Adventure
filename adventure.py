@@ -17,7 +17,7 @@ class Game:
             "quit": "Exit/end the game"
         }
 
-    def print_location(self):
+    def show_current_place(self):
         print(f"> {self.current_location['name']}")
         print(f"\n{self.current_location['desc']}")
         if "items" in self.current_location and self.current_location["items"]:
@@ -25,7 +25,7 @@ class Game:
             print(f"\nItems: {items}")
         print(f"\nExits: {' '.join(self.current_location['exits'].keys())}\n")
 
-    def handle_input(self, input_str):
+    def process_input(self, input_str):
         input_str = input_str.lower().strip()
 
         if input_str.startswith('go'):
@@ -102,7 +102,7 @@ class Game:
                 else:
                     print(f"There's no {item_name} in inventory.\n")
         elif input_str.startswith("look"):
-            self.print_location()
+            self.show_current_place()
         elif input_str.startswith("help"):
             print("You can run the following commands: \n")
             for key, value in self.valid_verb_dict.items():
@@ -116,16 +116,16 @@ class Game:
 
         while game_running:
             if location_count == 0:
-                self.print_location()
+                self.show_current_place()
                 location_count += 1
             try:
                 action = input('What would you like to do? ')
                 if re.match(re.compile(r'quit', re.IGNORECASE), action.lower().strip()):
                     break
-                new_location = self.handle_input(action)
+                new_location = self.process_input(action)
                 if new_location:
                     self.current_location = new_location
-                    self.print_location()
+                    self.show_current_place()
 
             except (EOFError):
                 print("\nUse 'quit' to exit.")
