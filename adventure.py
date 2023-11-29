@@ -17,6 +17,12 @@ class Game:
             "quit": "Exit/end the game"
         }
 
+    def generate_help_text(self):
+        help_text = "You can run the following commands:\n"
+        for key, value in self.valid_verb_dict.items():
+            help_text += f"  {key} {value} ...\n" if "..." in value else f"  {key} - {value}\n"
+        return help_text
+
     def show_current_place(self):
         print(f"> {self.current_location['name']}")
         print(f"\n{self.current_location['desc']}")
@@ -104,9 +110,8 @@ class Game:
         elif input_str.startswith("look"):
             self.show_current_place()
         elif input_str.startswith("help"):
-            print("You can run the following commands: \n")
-            for key, value in self.valid_verb_dict.items():
-                print(key, ":", value)
+            help_text = self.generate_help_text()
+            print(help_text)
         else:
             print('I don\'t understand that enter a valid command.')
 
@@ -142,4 +147,3 @@ if __name__ == "__main__":
 
     game_instance = Game(filename)
     game_instance.run_game()
-
