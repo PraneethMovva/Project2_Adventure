@@ -50,6 +50,7 @@ class Game:
                     print(f"Did you want to go {', '.join(matching_directions)}?")
                 else:
                     print(f"There's no way to go {direction}.")
+
         elif len(input_str) == 1:
             direction_dict = {'e': 'east', 'w': 'west', 'n': 'north', 's': 'south'}
             if input_str in direction_dict:
@@ -63,6 +64,7 @@ class Game:
                     print(f"There's no way to go {direction}.")
             else:
                 print("Invalid direction.")
+
         elif input_str.startswith('get'):
             item_name = input_str[4:]
             if len(self.player_inventory) == 6:
@@ -81,6 +83,7 @@ class Game:
                     print(f"Did you want to get {', '.join(matching_items)}?")
                 else:
                     print(f"There's no {item_name} anywhere.")
+
         elif input_str in {'inventory', 'inv', 'i'}:
             if len(self.player_inventory) == 0:
                 print("You're not carrying anything.")
@@ -89,6 +92,7 @@ class Game:
                 print("Inventory:")
                 for item in self.player_inventory:
                     print(f"  {item}")
+
         elif input_str.startswith("drop"):
             item_name = input_str[5:]
             if len(item_name) == 0:
@@ -107,8 +111,10 @@ class Game:
                     print(f"Did you want to drop {', '.join(matching_inventory_items)}?")
                 else:
                     print(f"There's no {item_name} in inventory.\n")
+
         elif input_str.startswith("look"):
             self.show_current_place()
+            
         elif input_str.startswith("help"):
             help_text = self.generate_help_text()
             print(help_text)
